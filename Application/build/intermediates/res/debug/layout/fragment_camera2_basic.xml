@@ -43,20 +43,35 @@
             android:src="@drawable/ic_action_info" />
 
         <Button
-            android:id="@+id/startActivity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal|top"
-            android:text="@string/start"
-            android:clickable="true" />
-
-        <Button
             android:id="@+id/stopActivity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|bottom"
             android:text="@string/stop"
             android:clickable="true" />
+
+        <Button
+            android:id="@+id/startActivity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/start"
+            android:clickable="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/clientCodeLabel"
+            android:id="@+id/clientCodeLabel"
+            android:layout_gravity="left|top" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/clientCodeText"
+            android:layout_gravity="center_horizontal|top"
+            android:width="160dp" />
 
     </FrameLayout>
 

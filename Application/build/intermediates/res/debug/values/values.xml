@@ -242,6 +242,7 @@
     <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/src/main/res/values/strings.xml -->
     <eat-comment/>
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <string name="clientCodeLabel">Client Code</string>
     <string name="description_info">Info</string>
     <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/src/main/res/values/base-strings.xml -->
     <eat-comment/>

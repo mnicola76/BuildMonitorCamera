@@ -56,6 +56,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.File;
@@ -186,6 +187,9 @@ public class Camera2BasicFragment extends Fragment
     /**
      * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its state.
      */
+
+    private EditText mClientCodeText;
+
     private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
         @Override
@@ -422,6 +426,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.info).setOnClickListener(this);
         view.findViewById(R.id.stopActivity).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mClientCodeText = (EditText) view.findViewById(R.id.clientCodeText);
     }
 
     @Override
@@ -850,6 +855,7 @@ public class Camera2BasicFragment extends Fragment
                     showToast("Saved: " + mFile);
                     Log.d(TAG, mFile.toString());
                     unlockFocus();
+                    copyFileToCloudSFTP(mFile, mClientCode);
                 }
             };
 
@@ -859,6 +865,45 @@ public class Camera2BasicFragment extends Fragment
             e.printStackTrace();
         }
     }
+
+    /**
+     * Copy photo into the cloud
+     * @param file
+     */
+    private void copyFileToCloudFTP(File file, String clientCode) {
+        FTPTo ftpRequest = new FTPTo();
+        try {
+            ftpRequest.upload("rubixvm.cloudapp.net", "rubix", "Rubix123", file.getName(), file);
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void copyFileToCloudSFTP(File file, String clientCode) {
+        SFTPConnection sftpRequest = new SFTPConnection("rubix",
+                "Rubix123",
+                "rubixvm.cloudapp.net",
+                file,
+                clientCode + "-" + file.getName());
+        try {
+            sftpRequest.doInBackground();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void copyFileToCloudSCP(File file, String clientCode) {
+        ScpTo scpRequest = new ScpTo("rubix", "Rubix123", "rubixvm.cloudapp.net", file, file.getName());
+        try {
+            scpRequest.SendFile();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
 
     /**
      * Unlock the focus. This method should be called when still image capture sequence is
@@ -882,8 +927,7 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-
-    private int mInterval = 10000; // 10 seconds by default, can be changed later
+    private int mInterval = 30000; // 30 seconds by default, can be changed later
     private Handler mHandler;
 
     private Runnable mStatusChecker = new Runnable() {
@@ -894,6 +938,7 @@ public class Camera2BasicFragment extends Fragment
         }
     };
 
+    private String mClientCode;
 
     @Override
     public void onClick(View view) {
@@ -901,6 +946,7 @@ public class Camera2BasicFragment extends Fragment
         switch (view.getId()) {
             case R.id.startActivity: {
 
+                mClientCode = mClientCodeText.getText().toString();
                 mStatusChecker.run();
                 break;
             }
