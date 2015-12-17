@@ -1,0 +1,18 @@
+Settings page
+ - with persisting settings (done)
+ - set days of the week to take photos (done)
+ - set time period to take photos (done)
+ - set duration between photos (done)
+ - move Client code to settings page (done)
+
+Core code:
+ - Sleep screen when waiting between photos
+ - Check current day of the week against DoW setting value (done)
+ - Check current time against time period setting value (done)
+ - Use duration setting value (done)
+ - Change package name
+ - Change icon
+ - Delete photo from storage once sftp is complete
+
+ Other stuff:
+ - Powershell script to move files from holding into ClientCode directories

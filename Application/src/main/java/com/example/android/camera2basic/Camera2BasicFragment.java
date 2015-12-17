@@ -24,6 +24,7 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
@@ -46,6 +47,7 @@ import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
 import android.util.Log;
@@ -63,12 +65,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -187,8 +193,6 @@ public class Camera2BasicFragment extends Fragment
     /**
      * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its state.
      */
-
-    private EditText mClientCodeText;
 
     private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
@@ -378,7 +382,7 @@ public class Camera2BasicFragment extends Fragment
      * @return The optimal {@code Size}, or an arbitrary one if none were big enough
      */
     private static Size chooseOptimalSize(Size[] choices, int textureViewWidth,
-            int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
+                                          int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
 
         // Collect the supported resolutions that are at least as big as the preview Surface
         List<Size> bigEnough = new ArrayList<>();
@@ -390,7 +394,7 @@ public class Camera2BasicFragment extends Fragment
             if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight &&
                     option.getHeight() == option.getWidth() * h / w) {
                 if (option.getWidth() >= textureViewWidth &&
-                    option.getHeight() >= textureViewHeight) {
+                        option.getHeight() >= textureViewHeight) {
                     bigEnough.add(option);
                 } else {
                     notBigEnough.add(option);
@@ -426,21 +430,12 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.info).setOnClickListener(this);
         view.findViewById(R.id.stopActivity).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mClientCodeText = (EditText) view.findViewById(R.id.clientCodeText);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         mHandler = new Handler();
-//        Calendar c = Calendar.getInstance();
-//        String dateTimeStamp = String.valueOf(c.get(Calendar.YEAR))
-//                + String.valueOf(c.get(Calendar.MONTH))
-//                + String.valueOf(c.get(Calendar.DAY_OF_MONTH))
-//                + String.valueOf(c.get(Calendar.HOUR))
-//                + String.valueOf(c.get(Calendar.MINUTE))
-//                + String.valueOf(c.get(Calendar.SECOND));
-//        mFile = new File(getActivity().getExternalFilesDir(null), "pic" + dateTimeStamp + ".jpg");
     }
 
     @Override
@@ -868,14 +863,14 @@ public class Camera2BasicFragment extends Fragment
 
     /**
      * Copy photo into the cloud
+     *
      * @param file
      */
     private void copyFileToCloudFTP(File file, String clientCode) {
         FTPTo ftpRequest = new FTPTo();
         try {
             ftpRequest.upload("rubixvm.cloudapp.net", "rubix", "Rubix123", file.getName(), file);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -888,8 +883,7 @@ public class Camera2BasicFragment extends Fragment
                 clientCode + "-" + file.getName());
         try {
             sftpRequest.doInBackground();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -898,8 +892,7 @@ public class Camera2BasicFragment extends Fragment
         ScpTo scpRequest = new ScpTo("rubix", "Rubix123", "rubixvm.cloudapp.net", file, file.getName());
         try {
             scpRequest.SendFile();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -927,26 +920,77 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-    private int mInterval = 30000; // 30 seconds by default, can be changed later
     private Handler mHandler;
+    private String mClientCode;
+    private Set<String> mDaysToShoot;
+    private int mWaitDuration;
+    private String mPhotoStartTime;
+    private String mPhotoFinishTime;
 
     private Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
-            takePicture(); //this function can change value of mInterval.
-            mHandler.postDelayed(mStatusChecker, mInterval);
+            if (CheckDayOfWeekPref() && CheckTimeOfDayPref()) {
+                takePicture(); //this function can change value of mInterval.
+                mHandler.postDelayed(mStatusChecker, mWaitDuration * 60);
+            }
+            else {
+                mHandler.postDelayed(mStatusChecker, mWaitDuration * 60);
+            }
         }
     };
 
-    private String mClientCode;
+    private Boolean CheckDayOfWeekPref() {
+        Calendar c = Calendar.getInstance();
+        int day = c.get(Calendar.DAY_OF_WEEK);
+        int currDay;
+
+        for (String s : mDaysToShoot) {
+            try {
+                currDay = Integer.parseInt(s);
+            } catch(NumberFormatException e) {
+                e.printStackTrace();
+                return false;
+            }
+            if (currDay == day){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Boolean CheckTimeOfDayPref() {
+        Calendar c = Calendar.getInstance();
+        Date timeNow = c.getTime();
+
+        try {
+            Date startTime = new SimpleDateFormat("HH:mm").parse(mPhotoStartTime + "0");
+            Calendar startCal = Calendar.getInstance();
+            startCal.setTime(startTime);
+
+            Date finishTime = new SimpleDateFormat("HH:mm").parse(mPhotoFinishTime + "0");
+            Calendar finishCal = Calendar.getInstance();
+            finishCal.setTime(finishTime);
+
+            if (timeNow.after(startCal.getTime()) && timeNow.before(finishCal.getTime())) {
+                return true;
+            } else return false;
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Override
     public void onClick(View view) {
 
         switch (view.getId()) {
             case R.id.startActivity: {
-
-                mClientCode = mClientCodeText.getText().toString();
+                mClientCode = CameraActivity.myClientCodePref;
+                mDaysToShoot = CameraActivity.myDaysToShootPref;
+                mWaitDuration = CameraActivity.myWaitDurationPref;
+                mPhotoStartTime = CameraActivity.myPhotoStartTimePref;
+                mPhotoFinishTime = CameraActivity.myPhotoFinishTimePref;
                 mStatusChecker.run();
                 break;
             }

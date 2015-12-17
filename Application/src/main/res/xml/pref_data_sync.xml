@@ -1,0 +1,29 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to
+         dismiss it. -->
+    <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_photo_frequency"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:inputType="number"
+        android:key="photo_frequency"
+        android:title="@string/pref_title_photo_frequency" />
+
+    <MultiSelectListPreference
+        android:key="photo_days_list"
+        android:title="@string/pref_title_photo_days"
+        android:entries="@array/pref_photo_days_list_titles"
+        android:entryValues="@array/pref_photo_days_list_values"
+        android:defaultValue="@array/pref_photo_days_list_default"/>
+
+    <com.example.android.camera2basic.TimePreference
+        android:key="photo_start_time"
+        android:title="@string/pref_title_photo_start_time" />
+
+    <com.example.android.camera2basic.TimePreference
+        android:key="photo_finish_time"
+        android:title="@string/pref_title_photo_finish_time" />
+
+</PreferenceScreen>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.0.0/res/values-sw600dp/values-sw600dp.xml -->
+    <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.1.1/res/values-sw600dp/values-sw600dp.xml -->
     <eat-comment/>
     <dimen name="abc_action_bar_content_inset_material">24dp</dimen>
     <dimen name="abc_action_bar_default_height_material">64dp</dimen>
@@ -13,7 +13,7 @@
     <eat-comment/>
     <dimen name="horizontal_page_margin">@dimen/margin_huge</dimen>
     <dimen name="vertical_page_margin">@dimen/margin_medium</dimen>
-    <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.0.0/res/values-sw600dp/values-sw600dp.xml -->
+    <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.1.1/res/values-sw600dp/values-sw600dp.xml -->
     <eat-comment/>
     <integer name="abc_max_action_buttons">5</integer>
     <!-- From: file:/Users/mnicola/AndroidStudioProjects/android-Camera2Basic-master/Application/src/main/res/values-sw600dp/template-styles.xml -->
