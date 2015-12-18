@@ -17,18 +17,17 @@
 package com.example.android.camera2basic;
 
 import android.app.Activity;
+import android.app.KeyguardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Button;
+import android.view.WindowManager;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -46,8 +45,10 @@ public class CameraActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         setContentView(R.layout.activity_camera);
         initializeStyle();
+        createWakeLocks();
         if (null == savedInstanceState) {
             getFragmentManager().beginTransaction()
                     .replace(R.id.container, Camera2BasicFragment.newInstance())
@@ -68,7 +69,12 @@ public class CameraActivity extends Activity {
     protected void onResume() {
         // TODO Auto-generated method stub
         super.onResume();
-
+        if(fullWakeLock.isHeld()){
+            fullWakeLock.release();
+        }
+        if(partialWakeLock.isHeld()){
+            partialWakeLock.release();
+        }
         SharedPreferences myPreference=PreferenceManager.getDefaultSharedPreferences(this);
         myClientCodePref = prefs.getString("client_code", "");
         myDaysToShootPref = prefs.getStringSet("photo_days_list", new HashSet<String>());
@@ -96,6 +102,38 @@ public class CameraActivity extends Activity {
             // more code...
         }
         return true;
+    }
+
+    public static PowerManager.WakeLock fullWakeLock;
+    public static PowerManager.WakeLock partialWakeLock;
+
+    // Called from onCreate
+    protected void createWakeLocks(){
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        fullWakeLock = powerManager.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "Loneworker - FULL WAKE LOCK");
+        partialWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Loneworker - PARTIAL WAKE LOCK");
+    }
+
+    // Called implicitly when device is about to sleep or application is backgrounded
+    @Override
+    protected void onPause(){
+        super.onPause();
+        partialWakeLock.acquire();
+    }
+
+    // Called whenever we need to wake up the device
+    public static void wakeDevice() {
+        fullWakeLock.acquire();
+
+        //KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        //KeyguardManager.KeyguardLock keyguardLock = keyguardManager.newKeyguardLock("TAG");
+        //keyguardLock.disableKeyguard();
+    }
+
+    public static void releaseLock() {
+        if(fullWakeLock.isHeld()){
+            fullWakeLock.release();
+        }
     }
 
 }

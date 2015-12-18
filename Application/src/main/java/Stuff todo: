@@ -6,7 +6,7 @@ Settings page
  - move Client code to settings page (done)
 
 Core code:
- - Sleep screen when waiting between photos
+ - Sleep screen when waiting between photos (done)
  - Check current day of the week against DoW setting value (done)
  - Check current time against time period setting value (done)
  - Use duration setting value (done)

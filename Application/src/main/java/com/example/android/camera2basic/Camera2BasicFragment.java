@@ -47,6 +47,7 @@ import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
@@ -221,7 +222,6 @@ public class Camera2BasicFragment extends Fragment
                 activity.finish();
             }
         }
-
     };
 
     /**
@@ -438,26 +438,30 @@ public class Camera2BasicFragment extends Fragment
         mHandler = new Handler();
     }
 
+    private int counter = 0;
+
     @Override
     public void onResume() {
         super.onResume();
-        startBackgroundThread();
+        if (counter == 0) {
+            startBackgroundThread();
 
-        // When the screen is turned off and turned back on, the SurfaceTexture is already
-        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-        // a camera and start preview from here (otherwise, we wait until the surface is ready in
-        // the SurfaceTextureListener).
-        if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-        } else {
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+            // When the screen is turned off and turned back on, the SurfaceTexture is already
+            // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
+            // a camera and start preview from here (otherwise, we wait until the surface is ready in
+            // the SurfaceTextureListener).
+            if (mTextureView.isAvailable()) {
+                openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+            } else {
+                mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+            }
         }
     }
 
     @Override
     public void onPause() {
-        closeCamera();
-        stopBackgroundThread();
+        //closeCamera();
+        //stopBackgroundThread();
         super.onPause();
     }
 
@@ -930,15 +934,36 @@ public class Camera2BasicFragment extends Fragment
     private Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
+            CameraActivity.wakeDevice();
             if (CheckDayOfWeekPref() && CheckTimeOfDayPref()) {
-                takePicture(); //this function can change value of mInterval.
-                mHandler.postDelayed(mStatusChecker, mWaitDuration * 60);
+                if (counter > 0) onManualResume();
+                takePicture();
+                CameraActivity.releaseLock();
+                mHandler.postDelayed(mStatusChecker, mWaitDuration * 60 * 1000); //mWaitDuration is in mins, convert to ms
             }
             else {
-                mHandler.postDelayed(mStatusChecker, mWaitDuration * 60);
+                CameraActivity.releaseLock();
+                mHandler.postDelayed(mStatusChecker, mWaitDuration * 60 * 1000);
             }
+            counter++;
         }
     };
+
+    public void onManualResume() {
+        //startBackgroundThread();
+
+        // When the screen is turned off and turned back on, the SurfaceTexture is already
+        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
+        // a camera and start preview from here (otherwise, we wait until the surface is ready in
+        // the SurfaceTextureListener).
+        mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+/*        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }
+*/
+    }
 
     private Boolean CheckDayOfWeekPref() {
         Calendar c = Calendar.getInstance();
@@ -946,12 +971,32 @@ public class Camera2BasicFragment extends Fragment
         int currDay;
 
         for (String s : mDaysToShoot) {
-            try {
-                currDay = Integer.parseInt(s);
-            } catch(NumberFormatException e) {
-                e.printStackTrace();
-                return false;
+            switch(s) {
+                case "Mon":
+                    currDay = 2;
+                    break;
+                case "Tue":
+                    currDay = 3;
+                    break;
+                case "Wed":
+                    currDay = 4;
+                    break;
+                case "Thu":
+                    currDay = 5;
+                    break;
+                case "Fri":
+                    currDay = 6;
+                    break;
+                case "Sat":
+                    currDay = 7;
+                    break;
+                case "Sun":
+                    currDay = 1;
+                    break;
+                default:
+                    currDay = 0;
             }
+
             if (currDay == day){
                 return true;
             }
@@ -960,8 +1005,7 @@ public class Camera2BasicFragment extends Fragment
     }
 
     private Boolean CheckTimeOfDayPref() {
-        Calendar c = Calendar.getInstance();
-        Date timeNow = c.getTime();
+        int hourNow = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
 
         try {
             Date startTime = new SimpleDateFormat("HH:mm").parse(mPhotoStartTime + "0");
@@ -972,7 +1016,10 @@ public class Camera2BasicFragment extends Fragment
             Calendar finishCal = Calendar.getInstance();
             finishCal.setTime(finishTime);
 
-            if (timeNow.after(startCal.getTime()) && timeNow.before(finishCal.getTime())) {
+            int startHour = startCal.get(Calendar.HOUR_OF_DAY);
+            int finishHour = finishCal.get(Calendar.HOUR_OF_DAY);
+
+            if (hourNow >= startHour && hourNow <= finishHour) {
                 return true;
             } else return false;
         } catch (ParseException e) {
